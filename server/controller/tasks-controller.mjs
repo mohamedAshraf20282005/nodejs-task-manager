@@ -8,7 +8,8 @@ const getAllTasks = async (req, res) => {
   try {
     const tasks = await tasksModel.find();
 
-    if (!tasks) return res.status(404).json("No tasks found");
+    if (!tasks) 
+        return res.status(404).json({statusText:statusText.FAILD, message:'Not Found'}) 
 
     return res.status(200).json({
       statusText: statusText.SUCCESS,
@@ -25,9 +26,10 @@ const getAllTasks = async (req, res) => {
 const getTask = async (req, res) => {
   try {
     const taskName = req.params.taskName;
-    const task = await tasksModel.findOne({ taskName });
+    const task = await  tasksModel.findOne({ taskName })
 
-    if (!task) return res.status(404).json("Not found");
+    if (!task) 
+        return res.status(404).json({statusText:statusText.FAILD, message:'Not Found'}) 
 
     return res.status(200).json({
       statusText: statusText.SUCCESS,
@@ -43,10 +45,11 @@ const getTask = async (req, res) => {
 
 const createTask = async (req, res) => {
     try{
-      const {taskName, description} = req.body;
+      const {taskName,taskId, description} = req.body;
 
       const newTask = new tasksModel({
         taskName,
+        taskId,
         description
       })
 
@@ -63,8 +66,54 @@ const createTask = async (req, res) => {
     }
 }
 
+const deleteTask = async (req, res) => {
+  try{
+      const taskId = req.params.taskId;
+      const task = await tasksModel.findOne({taskId});
+
+      if(!task) 
+        return res.status(404).json({statusText:statusText.FAILD, message:'Not Found'}) 
+
+      await task.deleteOne();
+      return res.status(200).json({statusText:statusText.SUCCESS, message:'Task deleted successfully'})
+  }catch(err){
+        return res.status(500).json({
+      statusText: statusText.ERROR,
+      message: "Internal server error",
+    });
+  }
+}
+
+const updateTask = async (req, res) => {
+  try{
+      const taskId = req.params.taskId;
+      const task = await tasksModel.findOne({taskId});
+
+      if(!task) 
+        return res.status(404).json({statusText:statusText.SUCCESS, message:'Not Found'});
+
+      await task.updateOne({
+        taskName:req.body.taskName,
+        description:req.body.description
+      });
+
+      const updatedTask = await tasksModel.findOne({taskId});
+
+     return res.status(200).json({statusText:statusText.SUCCESS, data:updatedTask})
+
+      
+  }catch(err){
+      return res.status(500).json({
+      statusText: statusText.ERROR,
+      message: "Internal server error",
+    });
+  }
+}
+
 export { 
     getAllTasks, 
     getTask,
-    createTask
+    createTask,
+    deleteTask,
+    updateTask
  };

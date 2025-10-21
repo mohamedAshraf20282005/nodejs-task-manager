@@ -7,7 +7,10 @@ const tasksSchema = new Schema({
         type:Date,
         default:Date.now
     },
-    taskId:Number,
+    taskId:{
+        type:Number,
+        required:true
+    },
     taskAchievement:{
         type:Boolean,
         default:false
