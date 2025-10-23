@@ -1,9 +1,8 @@
-import {object,string,number} from 'yup';
+import {object,string} from 'yup';
 
 const tasksValidation = object({
     taskName:string().required(),
     description:string(),
-    taskId:number().required(),
 })
 
 export default tasksValidation;

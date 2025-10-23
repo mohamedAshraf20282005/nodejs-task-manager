@@ -8,8 +8,10 @@ const getAllTasks = async (req, res) => {
   try {
     const tasks = await tasksModel.find();
 
-    if (!tasks) 
-        return res.status(404).json({statusText:statusText.FAILD, message:'Not Found'}) 
+    if (!tasks || tasks.length == 0)
+      return res
+        .status(404)
+        .json({ statusText: statusText.FAILD, message: "Not Found" });
 
     return res.status(200).json({
       statusText: statusText.SUCCESS,
@@ -26,10 +28,12 @@ const getAllTasks = async (req, res) => {
 const getTask = async (req, res) => {
   try {
     const taskName = req.params.taskName;
-    const task = await  tasksModel.findOne({ taskName })
+    const task = await tasksModel.findOne({ taskName });
 
-    if (!task) 
-        return res.status(404).json({statusText:statusText.FAILD, message:'Not Found'}) 
+    if (!task)
+      return res
+        .status(404)
+        .json({ statusText: statusText.FAILD, message: "Not Found" });
 
     return res.status(200).json({
       statusText: statusText.SUCCESS,
@@ -44,76 +48,90 @@ const getTask = async (req, res) => {
 };
 
 const createTask = async (req, res) => {
-    try{
-      const {taskName,taskId, description} = req.body;
+  try {
+    const { taskName, taskId, description } = req.body;
 
-      const newTask = new tasksModel({
-        taskName,
-        taskId,
-        description
-      })
+    //input values validation
+    await tasksValidation.validate(req.body, { strict: true });
 
-      await newTask.save()
-      return res.status(201).json({
-        statusText:statusText.SUCCESS, 
-        data:newTask
-      })
-    }catch(err){
-        return res.status(500).json({
+    // Find Last Task For Auto Increment To TaskId
+    const lastTask = await tasksModel.findOne().sort({ taskId: -1 });
+
+    // check if laskTask is found
+    const isFound = lastTask ? lastTask.taskId + 1 : 1;
+
+    const newTask = new tasksModel({
+      taskName,
+      taskId: isFound,
+      description,
+    });
+
+    await newTask.save();
+    return res.status(201).json({
+      statusText: statusText.SUCCESS,
+      data: newTask,
+    });
+  } catch (err) {
+    return res.status(500).json({
       statusText: statusText.ERROR,
       message: "Internal server error",
     });
-    }
-}
+  }
+};
 
 const deleteTask = async (req, res) => {
-  try{
-      const taskId = req.params.taskId;
-      const task = await tasksModel.findOne({taskId});
+  try {
+    const taskId = req.params.taskId;
+    const task = await tasksModel.findOne({ taskId });
 
-      if(!task) 
-        return res.status(404).json({statusText:statusText.FAILD, message:'Not Found'}) 
+    if (!task)
+      return res
+        .status(404)
+        .json({ statusText: statusText.FAILD, message: "Not Found" });
 
-      await task.deleteOne();
-      return res.status(200).json({statusText:statusText.SUCCESS, message:'Task deleted successfully'})
-  }catch(err){
-        return res.status(500).json({
+    await task.deleteOne();
+    return res.status(200).json({
+      statusText: statusText.SUCCESS,
+      message: "Task deleted successfully",
+    });
+  } catch (err) {
+    return res.status(500).json({
       statusText: statusText.ERROR,
       message: "Internal server error",
     });
   }
-}
+};
 
 const updateTask = async (req, res) => {
-  try{
-      const taskId = req.params.taskId;
-      const task = await tasksModel.findOne({taskId});
+  try {
 
-      if(!task) 
-        return res.status(404).json({statusText:statusText.SUCCESS, message:'Not Found'});
+    await tasksValidation.validate(req.body, { strict: true });
 
-      await task.updateOne({
-        taskName:req.body.taskName,
-        description:req.body.description
-      });
+    const taskId = req.params.taskId;
+    
+    const task = await tasksModel.findOne({ taskId });
 
-      const updatedTask = await tasksModel.findOne({taskId});
+    if (!task)
+      return res
+        .status(404)
+        .json({ statusText: statusText.SUCCESS, message: "Not Found" });
 
-     return res.status(200).json({statusText:statusText.SUCCESS, data:updatedTask})
+    await task.updateOne({
+      taskName: req.body.taskName,
+      description: req.body.description,
+    });
 
-      
-  }catch(err){
-      return res.status(500).json({
+    const updatedTask = await tasksModel.findOne({ taskId });
+
+    return res
+      .status(200)
+      .json({ statusText: statusText.SUCCESS, data: updatedTask });
+  } catch (err) {
+    return res.status(500).json({
       statusText: statusText.ERROR,
       message: "Internal server error",
     });
   }
-}
+};
 
-export { 
-    getAllTasks, 
-    getTask,
-    createTask,
-    deleteTask,
-    updateTask
- };
+export { getAllTasks, getTask, createTask, deleteTask, updateTask };

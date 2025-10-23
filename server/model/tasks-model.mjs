@@ -9,7 +9,7 @@ const tasksSchema = new Schema({
     },
     taskId:{
         type:Number,
-        required:true
+        default:1
     },
     taskAchievement:{
         type:Boolean,
